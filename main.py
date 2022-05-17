@@ -16,68 +16,45 @@ driver.get(URL)
 organisation = []
 location = []
 date = []
-mission_name = []
-rocket_name = []
+details = []
 price = []
 mission_status = []
 rocket_status = []
 
 
 def get_results():
-    launches = driver.find_elements(By.CSS_SELECTOR, "button[onclick*='/launches'")
+    # Compute Organisation
+    organisations = driver.find_elements(By.CSS_SELECTOR, ".mdl-card__title-text span")
+    for organisation_scrape in organisations:
+        organisation.append(organisation_scrape.text)
 
+    # Compute Location and Date
+    loc_date = driver.find_elements(By.CLASS_NAME, "mdl-card__supporting-text")
+    for scrape in loc_date:
+        date_scrape = scrape.text.splitlines()[0]
+        date.append(date_scrape)
+
+        location_scrape = scrape.text.splitlines()[1]
+        location.append(location_scrape)
+
+    # Compute details
+    details_scrape = driver.find_elements(By.CLASS_NAME, "header-style")
+    for detail in details_scrape:
+        details.append(detail.text)
+
+    launches = driver.find_elements(By.CSS_SELECTOR, "button[onclick*='/launches'")
     for launch in launches:
         launch.click()
 
-        try:
-            organisation_scrape = driver.find_element(
-                By.XPATH, "/html/body/div/div/main/div/section[2]/div/div[1]/div/div[1]").text
-            organisation.append(organisation_scrape)
-        except NoSuchElementException or StaleElementReferenceException:
-            organisation.append("")
-
-        try:
-            location_scrape = driver.find_element(By.XPATH, "/html/body/div/div/main/div/section[5]/div[1]/h4").text
-            if len(location_scrape) <= 5:
-                location_scrape = driver.find_element(By.XPATH, "/html/body/div/div/main/div/section[4]/div[1]/h4").text
-                location.append(location_scrape)
-            else:
-                location.append(location_scrape)
-        except NoSuchElementException or StaleElementReferenceException:
-            location.append("")
-
-        try:
-            date_scrape = driver.find_element(By.ID, "localized").text
-            date.append(date_scrape)
-        except NoSuchElementException:
-            date_scrape = driver.find_element(
-                By.XPATH, "/html/body/div/div/main/div/section[1]/div/div/div[1]/div").text
-            date.append(date_scrape.splitlines()[1])
-        except StaleElementReferenceException:
-            date.append("")
-
-        try:
-            mission_name_scrape = driver.find_element(By.CSS_SELECTOR, "h4.mdl-card__title-text").text
-            mission_name.append(mission_name_scrape)
-        except NoSuchElementException or StaleElementReferenceException:
-            mission_name.append("")
-
-        try:
-            rocket_name_scrape = driver.find_element(By.CSS_SELECTOR, "div.mdl-card__title-text span").text
-            rocket_name.append(rocket_name_scrape)
-        except NoSuchElementException or StaleElementReferenceException:
-            rocket_name.append("")
-
-        try:
-            price_scrape = driver.find_element(
-                By.XPATH, "/html/body/div/div/main/div/section[2]/div/div[1]/div/div[3]").text
-            if price_scrape.startswith("Price"):
-                price.append(price_scrape.split(": ")[1])
-            else:
-                price.append("")
-        except NoSuchElementException or StaleElementReferenceException:
+        # Compute Price
+        price_scrape = driver.find_element(
+            By.XPATH, "/html/body/div/div/main/div/section[2]/div/div[1]/div/div[3]").text
+        if price_scrape.startswith("Price"):
+            price.append(price_scrape.split(": ")[1])
+        else:
             price.append("")
 
+        # Compute Mission Status
         try:
             mission_status_scrape = driver.find_element(
                 By.XPATH, "/html/body/div/div/main/div/section[1]/h6[2]/span").text
@@ -89,6 +66,7 @@ def get_results():
         except StaleElementReferenceException:
             mission_status.append("")
 
+        # Compute Rocket Status
         try:
             rocket_status_scrape = driver.find_element(
                 By.XPATH, "/html/body/div/div/main/div/section[2]/div/div[1]/div/div[2]").text
@@ -115,8 +93,7 @@ while True:
 df = pd.DataFrame({"organisation": organisation,
                    "location": location,
                    "date": date,
-                   "mission_name": mission_name,
-                   "rocket_name": rocket_name,
+                   "details": details,
                    "price_in_million": price,
                    "mission_status": mission_status,
                    "rocket_status": rocket_status})
