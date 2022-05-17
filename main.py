@@ -1,4 +1,5 @@
 import pandas as pd
+import selenium.common.exceptions
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
@@ -8,6 +9,7 @@ import time
 URL = "https://nextspaceflight.com/launches/past/"
 
 url = Service(r"C:\Users\Zach7\Documents\pythonProject\chromedriver.exe")
+# service = r"C:\Users\Zach7\Documents\Renata\chromedriver.exe"
 driver = webdriver.Chrome(service=url)
 driver.get(URL)
 
@@ -17,7 +19,6 @@ date = []
 mission_name = []
 rocket_name = []
 price = []
-launch_provider = []
 mission_status = []
 rocket_status = []
 
@@ -36,15 +37,23 @@ def get_results():
             organisation.append("")
 
         try:
-            location_scrape = driver.find_element(By.XPATH, "/html/body/div/div/main/div/section[4]/div[1]/h4").text
-            location.append(location_scrape)
+            location_scrape = driver.find_element(By.XPATH, "/html/body/div/div/main/div/section[5]/div[1]/h4").text
+            if len(location_scrape) <= 5:
+                location_scrape = driver.find_element(By.XPATH, "/html/body/div/div/main/div/section[4]/div[1]/h4").text
+                location.append(location_scrape)
+            else:
+                location.append(location_scrape)
         except NoSuchElementException or StaleElementReferenceException:
             location.append("")
 
         try:
             date_scrape = driver.find_element(By.ID, "localized").text
             date.append(date_scrape)
-        except NoSuchElementException or StaleElementReferenceException:
+        except NoSuchElementException:
+            date_scrape = driver.find_element(
+                By.XPATH, "/html/body/div/div/main/div/section[1]/div/div/div[1]/div").text
+            date.append(date_scrape.splitlines()[1])
+        except StaleElementReferenceException:
             date.append("")
 
         try:
@@ -63,23 +72,21 @@ def get_results():
             price_scrape = driver.find_element(
                 By.XPATH, "/html/body/div/div/main/div/section[2]/div/div[1]/div/div[3]").text
             if price_scrape.startswith("Price"):
-                price.append(price_scrape)
+                price.append(price_scrape.split(": ")[1])
             else:
                 price.append("")
         except NoSuchElementException or StaleElementReferenceException:
             price.append("")
 
         try:
-            launch_provider_scrape = driver.find_element(
-                By.XPATH, "/html/body/div/div/main/div/section[2]/div/div[1]/div/div[1]").text
-            launch_provider.append(launch_provider_scrape)
-        except NoSuchElementException or StaleElementReferenceException:
-            launch_provider.append("")
-
-        try:
-            mission_status_scrape = driver.find_element(By.XPATH, "/html/body/div/div/main/div/section[1]/h6/span").text
+            mission_status_scrape = driver.find_element(
+                By.XPATH, "/html/body/div/div/main/div/section[1]/h6[2]/span").text
             mission_status.append(mission_status_scrape)
-        except NoSuchElementException or StaleElementReferenceException:
+        except NoSuchElementException:
+            mission_status_scrape = driver.find_element(
+                By.XPATH, "/html/body/div/div/main/div/section[1]/h6/span").text
+            mission_status.append(mission_status_scrape)
+        except StaleElementReferenceException:
             mission_status.append("")
 
         try:
@@ -107,11 +114,10 @@ while True:
 
 df = pd.DataFrame({"organisation": organisation,
                    "location": location,
-                   "date:": date,
+                   "date": date,
                    "mission_name": mission_name,
-                   "details": rocket_name,
+                   "rocket_name": rocket_name,
                    "price_in_million": price,
-                   "launch_provider:": launch_provider,
                    "mission_status": mission_status,
                    "rocket_status": rocket_status})
 df.to_csv("output.csv")
